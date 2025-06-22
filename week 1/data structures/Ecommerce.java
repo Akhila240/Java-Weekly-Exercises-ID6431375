@@ -1,7 +1,7 @@
 import java.util.Arrays;
 import java.util.Comparator;
 
-public class EcommerceSearch {
+class EcommerceSearch {
 
     public static Product linearSearch(Product[] products, int targetId) {
         for (Product p : products) {

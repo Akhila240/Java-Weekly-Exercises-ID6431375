@@ -1,82 +1,79 @@
--- Drop tables directly (no EXECUTE IMMEDIATE)
-DROP TABLE accounts PURGE;
-DROP TABLE employees PURGE;
--- If table doesn't exist, ignore the error and re-run script
+-- Drop if already exists (safe reset)
+BEGIN
+  EXECUTE IMMEDIATE 'DROP TABLE accounts';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+
+BEGIN
+  EXECUTE IMMEDIATE 'DROP TABLE employees';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
 
 -- Create tables
 CREATE TABLE accounts (
-    account_id NUMBER PRIMARY KEY,
-    account_type VARCHAR2(20),
-    balance NUMBER
+    account_id     NUMBER PRIMARY KEY,
+    account_type   VARCHAR2(20),
+    balance        NUMBER
 );
 
 CREATE TABLE employees (
-    employee_id NUMBER PRIMARY KEY,
-    department_id NUMBER,
-    salary NUMBER
+    employee_id    NUMBER PRIMARY KEY,
+    department_id  NUMBER,
+    salary         NUMBER
 );
 
--- Insert test data
-INSERT INTO accounts VALUES (101, 'savings', 10000);
-INSERT INTO accounts VALUES (102, 'savings', 5000);
-INSERT INTO accounts VALUES (103, 'current', 2000);
+-- Insert data
+INSERT INTO accounts VALUES (1, 'savings', 10000);
+INSERT INTO accounts VALUES (2, 'savings', 20000);
+INSERT INTO accounts VALUES (3, 'current', 15000);
 
-INSERT INTO employees VALUES (1, 10, 30000);
-INSERT INTO employees VALUES (2, 10, 40000);
-INSERT INTO employees VALUES (3, 20, 35000);
+INSERT INTO employees VALUES (101, 10, 5000);
+INSERT INTO employees VALUES (102, 20, 6000);
+INSERT INTO employees VALUES (103, 10, 5500);
 
 COMMIT;
 
--- Enable DBMS Output
-BEGIN
-  DBMS_OUTPUT.PUT_LINE('✅ Setup complete.');
-END;
-/
--- Scenario 1: Apply interest
+-- Create procedure 1
+CREATE OR REPLACE PROCEDURE ProcessMonthlyInterest IS
 BEGIN
     UPDATE accounts
-    SET balance = balance + (balance * 0.01)
+    SET balance = balance + (balance * 0.03)
     WHERE account_type = 'savings';
-
-    DBMS_OUTPUT.PUT_LINE('✅ Interest applied to savings accounts.');
 END;
 /
 
--- Scenario 2: Employee bonus
-DECLARE
-    p_dept_id NUMBER := 10;
-    p_bonus_pct NUMBER := 15;
+-- Create procedure 2
+CREATE OR REPLACE PROCEDURE UpdateEmployeeBonus IS
 BEGIN
     UPDATE employees
-    SET salary = salary + (salary * (p_bonus_pct / 100))
-    WHERE department_id = p_dept_id;
-
-    DBMS_OUTPUT.PUT_LINE('✅ Bonus of ' || p_bonus_pct || '% applied to department ' || p_dept_id);
+    SET salary = salary + 1000
+    WHERE department_id = 10;
 END;
 /
 
--- Scenario 3: Transfer funds
-DECLARE
-    v_balance NUMBER;
-    p_from_account NUMBER := 101;
-    p_to_account NUMBER := 102;
-    p_amount NUMBER := 500;
+-- Create procedure 3
+CREATE OR REPLACE PROCEDURE TransferFunds IS
 BEGIN
-    SELECT balance INTO v_balance FROM accounts
-    WHERE account_id = p_from_account FOR UPDATE;
-
-    IF v_balance < p_amount THEN
-        RAISE_APPLICATION_ERROR(-20001, '❌ Not enough funds.');
-    END IF;
+    UPDATE accounts
+    SET balance = balance - 500
+    WHERE account_id = 1;
 
     UPDATE accounts
-    SET balance = balance - p_amount
-    WHERE account_id = p_from_account;
-
-    UPDATE accounts
-    SET balance = balance + p_amount
-    WHERE account_id = p_to_account;
-
-    DBMS_OUTPUT.PUT_LINE('✅ ₹' || p_amount || ' transferred from ' || p_from_account || ' to ' || p_to_account);
+    SET balance = balance + 500
+    WHERE account_id = 2;
 END;
 /
+
+-- Call procedures
+BEGIN
+    ProcessMonthlyInterest;
+    UpdateEmployeeBonus;
+    TransferFunds;
+END;
+/
+
+-- Show updated data
+SELECT * FROM accounts;
+SELECT * FROM employees;

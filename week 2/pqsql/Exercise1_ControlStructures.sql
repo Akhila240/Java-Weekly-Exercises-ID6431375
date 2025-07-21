@@ -14,7 +14,7 @@ BEGIN
     WHERE TRUNC(MONTHS_BETWEEN(SYSDATE, DATE_OF_BIRTH) / 12) > 60
   ) LOOP
     DBMS_OUTPUT.PUT_LINE('Customer ' || disc_rec.CUST_FIRST_NAME || ' ' || disc_rec.CUST_LAST_NAME ||
-                         ' (ID: ' || disc_rec.CUSTOMER_ID || ') is eligible for a senior citizen discount. Age: ' || disc_rec.AGE);
+                         ' (ID: ' || disc_rec.CUSTOMER_ID || ')s eligible for a senior citizen discount. Age: ' || disc_rec.AGE);
     senior_count := senior_count + 1;
   END LOOP;
 
